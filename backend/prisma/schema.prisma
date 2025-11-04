@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String    @map("password_hash")
+  name          String
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  meetings      Meeting[]
+  tasks         Task[]           @relation("TaskAssignee")
+  createdTasks  Task[]           @relation("TaskCreator")
+  activities    ActivityLog[]
+  organization  Organization?
+
+  @@map("users")
+}
+
+model Organization {
+  id         String   @id @default(uuid())
+  userId     String   @unique @map("user_id")
+  department String?
+  position   String?
+  managerId  String?  @map("manager_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  manager    Organization? @relation("OrganizationHierarchy", fields: [managerId], references: [id])
+  subordinates Organization[] @relation("OrganizationHierarchy")
+
+  @@map("organizations")
+}
+
+model Meeting {
+  id          String   @id @default(uuid())
+  title       String
+  content     String?  @db.Text
+  meetingDate DateTime @map("meeting_date")
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  creator     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  tasks       Task[]
+
+  @@map("meetings")
+}
+
+model Task {
+  id            String        @id @default(uuid())
+  meetingId     String?       @map("meeting_id")
+  parentTaskId  String?       @map("parent_task_id")
+  title         String
+  description   String?       @db.Text
+  assigneeId    String?       @map("assignee_id")
+  dueDate       DateTime?     @map("due_date")
+  progress      Int           @default(0) // 0-100
+  workflowType  WorkflowType  @default(TOP_DOWN) @map("workflow_type")
+  status        TaskStatus    @default(PENDING)
+  priority      TaskPriority  @default(MEDIUM)
+  createdBy     String        @map("created_by")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  meeting       Meeting?      @relation(fields: [meetingId], references: [id], onDelete: SetNull)
+  parentTask    Task?         @relation("TaskHierarchy", fields: [parentTaskId], references: [id])
+  subtasks      Task[]        @relation("TaskHierarchy")
+  assignee      User?         @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  creator       User          @relation("TaskCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  activities    ActivityLog[]
+
+  @@index([meetingId])
+  @@index([parentTaskId])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([workflowType])
+  @@map("tasks")
+}
+
+model ActivityLog {
+  id           String         @id @default(uuid())
+  taskId       String         @map("task_id")
+  userId       String         @map("user_id")
+  content      String         @db.Text
+  activityType ActivityType   @default(REPORT) @map("activity_type")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  task         Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+enum WorkflowType {
+  TOP_DOWN    // 상위 업무에서 하위 업무로의 하달 구조
+  PARALLEL    // 동시에 진행되는 병렬 업무
+  LINEAR      // 순차적으로 진행되는 직렬 업무
+  SEQUENTIAL  // 순차적 단계별 진행
+  ITERATIVE   // 반복적 개선 및 수정
+  AD_HOC      // 임시/즉석 업무
+  APPROVAL    // 승인 기반 업무
+}
+
+enum TaskStatus {
+  PENDING     // 대기 중
+  IN_PROGRESS // 진행 중
+  COMPLETED   // 완료
+  CANCELLED   // 취소
+}
+
+enum TaskPriority {
+  LOW         // 낮음
+  MEDIUM      // 보통
+  HIGH        // 높음
+}
+
+enum ActivityType {
+  REPORT        // 업무보고서
+  COMMENT       // 댓글
+  STATUS_CHANGE // 상태 변경
+}
