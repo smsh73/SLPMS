@@ -33,3 +33,29 @@ backend/prisma/migrations/
 # Generated files
 backend/generated/
 
+# LAMP Stack (Linux, Apache, MySQL, PHP)
+# Apache
+.htaccess.local
+.htpasswd
+httpd.conf
+apache.conf
+
+# MySQL
+*.sql.backup
+*.sql.gz
+*.sql.bak
+mysql-dump/
+
+# PHP
+composer.phar
+vendor/
+*.php~
+*.phps
+php.ini
+php.ini.local
+
+# Logs (Apache/PHP)
+access.log
+error.log
+*.log
+
