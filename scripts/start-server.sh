@@ -30,15 +30,24 @@ if [ ! -d "public" ] || [ ! -f "public/index.html" ]; then
   cd backend
 fi
 
+# Load environment variables from .env file
+if [ -f ".env" ]; then
+  export $(cat .env | grep -v '^#' | xargs)
+fi
+
 # Generate Prisma Client if needed
 if [ ! -d "node_modules/.prisma/client" ]; then
   echo ""
   echo "Prisma Client 생성 중..."
   npx prisma generate
+  if [ $? -ne 0 ]; then
+    echo "경고: Prisma Client 생성 실패. DATABASE_URL을 확인하세요."
+    echo "계속 진행합니다..."
+  fi
   echo ""
 fi
 
-# Load environment variables
+# Set production mode
 export NODE_ENV=production
 
 echo ""
