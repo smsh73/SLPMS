@@ -14,7 +14,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files from frontend build (production)
+// Serve static files from frontend build (production) - must be before routes
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
   app.use(express.static(path.join(__dirname, 'public')));
@@ -32,13 +32,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'SLPMS API is running' });
 });
 
-// Serve static files from frontend build (production)
+// Serve frontend for all non-API routes (production) - must be last
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
-  // Serve static files
-  app.use(express.static(path.join(__dirname, 'public')));
-  
-  // Serve frontend for all non-API routes
   app.get('*', (req, res) => {
     // Don't serve frontend for API routes
     if (req.path.startsWith('/api')) {
@@ -61,6 +57,9 @@ const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  if (process.env.NODE_ENV === 'production') {
+    console.log(`Frontend is being served from: ${__dirname}/public`);
+  }
 });
 
 // Graceful shutdown
@@ -75,4 +74,3 @@ process.on('SIGTERM', async () => {
 });
 
 module.exports = app;
-
