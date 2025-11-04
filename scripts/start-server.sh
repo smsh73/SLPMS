@@ -30,6 +30,14 @@ if [ ! -d "public" ] || [ ! -f "public/index.html" ]; then
   cd backend
 fi
 
+# Generate Prisma Client if needed
+if [ ! -d "node_modules/.prisma/client" ]; then
+  echo ""
+  echo "Prisma Client 생성 중..."
+  npx prisma generate
+  echo ""
+fi
+
 # Load environment variables
 export NODE_ENV=production
 

@@ -52,9 +52,19 @@ fi
 echo "Prisma Client 생성 중..."
 npx prisma generate
 
-# Run migrations
-echo "데이터베이스 마이그레이션 실행 중..."
-npx prisma migrate deploy
+if [ $? -ne 0 ]; then
+  echo "경고: Prisma Client 생성 중 오류가 발생했습니다."
+  echo "DATABASE_URL 환경 변수를 확인하세요."
+  echo "계속 진행합니다..."
+fi
+
+# Run migrations (if DATABASE_URL is set)
+if [ -n "$DATABASE_URL" ] || grep -q "DATABASE_URL" .env 2>/dev/null; then
+  echo "데이터베이스 마이그레이션 실행 중..."
+  npx prisma migrate deploy
+else
+  echo "경고: DATABASE_URL이 설정되지 않아 마이그레이션을 건너뜁니다."
+fi
 
 cd ..
 
