@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from frontend build (production)
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
-  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+  app.use(express.static(path.join(__dirname, 'public')));
 }
 
 // Routes
@@ -32,15 +32,19 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'SLPMS API is running' });
 });
 
-// Serve frontend for all non-API routes (production)
+// Serve static files from frontend build (production)
 if (process.env.NODE_ENV === 'production') {
   const path = require('path');
+  // Serve static files
+  app.use(express.static(path.join(__dirname, 'public')));
+  
+  // Serve frontend for all non-API routes
   app.get('*', (req, res) => {
     // Don't serve frontend for API routes
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ message: 'API endpoint not found' });
     }
-    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    res.sendFile(path.join(__dirname, 'public/index.html'));
   });
 }
 
