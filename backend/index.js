@@ -14,6 +14,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from frontend build (production)
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+}
+
 // Routes
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/meetings', require('./src/routes/meetings'));
@@ -25,6 +31,18 @@ app.use('/api/organization', require('./src/routes/organization'));
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'SLPMS API is running' });
 });
+
+// Serve frontend for all non-API routes (production)
+if (process.env.NODE_ENV === 'production') {
+  const path = require('path');
+  app.get('*', (req, res) => {
+    // Don't serve frontend for API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ message: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
